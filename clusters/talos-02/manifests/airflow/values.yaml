@@ -1,18 +1,27 @@
-# Apache Airflow Helm chart 1.16 — talos-02 (KubernetesExecutor, homelab)
+# Apache Airflow Helm chart 1.21 — talos-02 (Airflow 3.2.1, KubernetesExecutor)
 # https://airflow.apache.org/docs/helm-chart/stable/
+
+airflowVersion: "3.2.1"
+defaultAirflowTag: "3.2.1"
 
 executor: KubernetesExecutor
 
 allowPodLaunching: true
 
 fernetKeySecretName: airflow-credentials
-webserverSecretKeySecretName: airflow-credentials
+apiSecretKeySecretName: airflow-credentials
+jwtSecretName: airflow-credentials
 
 redis:
   enabled: false
 
 postgresql:
   enabled: true
+  image:
+    registry: docker.io
+    repository: bitnamilegacy/postgresql
+    tag: "17.6.0-debian-12-r4"
+    pullPolicy: IfNotPresent
   auth:
     username: airflow
     database: airflow
@@ -37,6 +46,9 @@ webserver:
     firstName: admin
     lastName: user
     password: ""
+
+apiServer:
+  enabled: true
   resources:
     requests:
       cpu: 100m
@@ -45,6 +57,7 @@ webserver:
       memory: 1Gi
 
 createUserJob:
+  enabled: true
   useHelmHooks: false
   extraVolumes:
     - name: airflow-credentials
@@ -64,9 +77,9 @@ createUserJob:
         -r Admin -u admin -e admin@alexetnico.com \
         -f admin -l user -p "${PASS}"
 
-# Celery workers not used with KubernetesExecutor
 workers:
-  replicas: 0
+  celery:
+    enableDefault: false
 
 scheduler:
   resources:
@@ -101,6 +114,8 @@ logs:
 
 ingress:
   web:
+    enabled: false
+  apiServer:
     enabled: true
     ingressClassName: nginx
     annotations:
