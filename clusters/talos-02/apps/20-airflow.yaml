@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: airflow
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: workloads
+  sources:
+    - repoURL: https://airflow.apache.org
+      chart: airflow
+      targetRevision: "1.16.0"
+      helm:
+        releaseName: airflow
+        valueFiles:
+          - $values/clusters/talos-02/manifests/airflow/values.yaml
+    - repoURL: https://github.com/BordetNicolas/homelab-apps.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: airflow
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

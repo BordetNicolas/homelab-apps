@@ -1,0 +1,118 @@
+# Apache Airflow Helm chart 1.16 — talos-02 (KubernetesExecutor, homelab)
+# https://airflow.apache.org/docs/helm-chart/stable/
+
+executor: KubernetesExecutor
+
+allowPodLaunching: true
+
+fernetKeySecretName: airflow-credentials
+webserverSecretKeySecretName: airflow-credentials
+
+redis:
+  enabled: false
+
+postgresql:
+  enabled: true
+  auth:
+    username: airflow
+    database: airflow
+    existingSecret: airflow-credentials
+    secretKeys:
+      userPasswordKey: postgres-password
+
+config:
+  core:
+    load_examples: "False"
+
+migrateDatabaseJob:
+  enabled: true
+  useHelmHooks: false
+
+webserver:
+  defaultUser:
+    enabled: true
+    role: Admin
+    username: admin
+    email: admin@alexetnico.com
+    firstName: admin
+    lastName: user
+    password: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+createUserJob:
+  useHelmHooks: false
+  extraVolumes:
+    - name: airflow-credentials
+      secret:
+        secretName: airflow-credentials
+  extraVolumeMounts:
+    - name: airflow-credentials
+      mountPath: /etc/airflow/credentials
+      readOnly: true
+  args:
+    - bash
+    - -c
+    - |
+      set -euo pipefail
+      PASS="$(tr -d '\n' < /etc/airflow/credentials/admin-password)"
+      exec airflow users create \
+        -r Admin -u admin -e admin@alexetnico.com \
+        -f admin -l user -p "${PASS}"
+
+# Celery workers not used with KubernetesExecutor
+workers:
+  replicas: 0
+
+scheduler:
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+triggerer:
+  enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+
+dags:
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClassName: longhorn
+  gitSync:
+    enabled: false
+
+logs:
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClassName: longhorn
+
+ingress:
+  web:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      external-dns.alpha.kubernetes.io/set: cloudflare
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    hosts:
+      - name: airflow-test.alexetnico.com
+        tls:
+          enabled: true
+          secretName: airflow-tls
+
+cleanup:
+  enabled: true
