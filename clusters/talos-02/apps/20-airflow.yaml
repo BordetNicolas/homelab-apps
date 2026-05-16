@@ -35,3 +35,5 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      # Jobs de migration / create-user : laisser le temps de terminer au premier sync
+      - ServerSideApply=true

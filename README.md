@@ -22,3 +22,7 @@ homelab-apps/
 ## Exemple
 
 Voir `clusters/talos-02/apps/10-whoami.yaml` et les manifests associés.
+
+## Airflow (talos-02)
+
+Checklist cluster vierge : [`clusters/talos-02/manifests/airflow/DOPPLER.md`](clusters/talos-02/manifests/airflow/DOPPLER.md).

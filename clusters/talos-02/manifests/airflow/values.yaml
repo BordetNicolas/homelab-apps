@@ -37,19 +37,16 @@ config:
   core:
     load_examples: "False"
 
-# DB déjà migrée en 3.2 — évite qu'ArgoCD reste bloqué sur le Job à chaque sync
 migrateDatabaseJob:
-  enabled: false
+  enabled: true
   useHelmHooks: false
+  ttlSecondsAfterFinished: 300
+  jobAnnotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 
-webserver:
-  defaultUser:
-    role: Admin
-    username: admin
-    email: admin@alexetnico.com
-    firstName: admin
-    lastName: user
-    password: ""
+# Ne pas définir webserver.defaultUser : le chart y lie createUserJob.enabled (déprécié).
+# L’admin est créé par createUserJob ci-dessous (mot de passe Doppler).
 
 apiServer:
   enabled: true
@@ -61,8 +58,12 @@ apiServer:
       memory: 1Gi
 
 createUserJob:
-  enabled: false
+  enabled: true
   useHelmHooks: false
+  ttlSecondsAfterFinished: 300
+  jobAnnotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
   extraVolumes:
     - name: airflow-credentials
       secret:
@@ -77,9 +78,13 @@ createUserJob:
     - |
       set -euo pipefail
       PASS="$(tr -d '\n' < /etc/airflow/credentials/admin-password)"
-      exec airflow users create \
-        -r Admin -u admin -e admin@alexetnico.com \
-        -f admin -l user -p "${PASS}"
+      if airflow users list 2>/dev/null | grep -qw admin; then
+        airflow users reset-password -u admin -p "${PASS}"
+      else
+        airflow users create \
+          -r Admin -u admin -e admin@alexetnico.com \
+          -f admin -l user -p "${PASS}"
+      fi
 
 workers:
   celery:
@@ -94,7 +99,6 @@ scheduler:
       memory: 1Gi
 
 triggerer:
-  # Réactiver après migration du PVC dags en ReadWriteMany (voir DOPPLER.md / README déploiement)
   enabled: true
   resources:
     requests:
