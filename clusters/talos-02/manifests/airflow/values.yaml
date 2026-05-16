@@ -94,7 +94,7 @@ scheduler:
 
 triggerer:
   # Réactiver après migration du PVC dags en ReadWriteMany (voir DOPPLER.md / README déploiement)
-  enabled: false
+  enabled: true
   resources:
     requests:
       cpu: 100m
