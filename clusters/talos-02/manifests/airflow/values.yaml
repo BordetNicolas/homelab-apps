@@ -37,8 +37,9 @@ config:
   core:
     load_examples: "False"
 
+# DB déjà migrée en 3.2 — évite qu'ArgoCD reste bloqué sur le Job à chaque sync
 migrateDatabaseJob:
-  enabled: true
+  enabled: false
   useHelmHooks: false
 
 webserver:
@@ -60,7 +61,7 @@ apiServer:
       memory: 1Gi
 
 createUserJob:
-  enabled: true
+  enabled: false
   useHelmHooks: false
   extraVolumes:
     - name: airflow-credentials

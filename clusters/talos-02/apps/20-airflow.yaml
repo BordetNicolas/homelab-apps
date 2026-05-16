@@ -7,6 +7,14 @@ metadata:
     argocd.argoproj.io/sync-wave: "0"
 spec:
   project: workloads
+  ignoreDifferences:
+    # PVC créé en RWO avant passage à ReadWriteMany dans values — immutable
+    - group: ""
+      kind: PersistentVolumeClaim
+      name: airflow-dags
+      namespace: airflow
+      jsonPointers:
+        - /spec/accessModes
   sources:
     - repoURL: https://airflow.apache.org
       chart: airflow
