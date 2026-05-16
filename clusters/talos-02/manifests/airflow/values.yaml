@@ -12,6 +12,10 @@ fernetKeySecretName: airflow-credentials
 apiSecretKeySecretName: airflow-credentials
 jwtSecretName: airflow-credentials
 
+# Ne pas laisser le chart générer postgres:postgres — utiliser la clé `connection` du secret Doppler.
+data:
+  metadataSecretName: airflow-credentials
+
 redis:
   enabled: false
 
@@ -39,7 +43,6 @@ migrateDatabaseJob:
 
 webserver:
   defaultUser:
-    enabled: true
     role: Admin
     username: admin
     email: admin@alexetnico.com
@@ -90,7 +93,8 @@ scheduler:
       memory: 1Gi
 
 triggerer:
-  enabled: true
+  # Réactiver après migration du PVC dags en ReadWriteMany (voir DOPPLER.md / README déploiement)
+  enabled: false
   resources:
     requests:
       cpu: 100m
@@ -103,6 +107,8 @@ dags:
     enabled: true
     size: 5Gi
     storageClassName: longhorn
+    # RWO bloque le triggerer si scheduler/dag-processor sont sur un autre nœud
+    accessMode: ReadWriteMany
   gitSync:
     enabled: false
 

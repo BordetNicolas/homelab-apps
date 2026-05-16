@@ -10,7 +10,17 @@ Créer ces variables dans [Doppler](https://dashboard.doppler.com) avant le prem
 | `AIRFLOW_API_SECRET_KEY` | `api-secret-key` | `openssl rand -hex 32` |
 | `AIRFLOW_JWT_SECRET` | `jwt-secret` | `openssl rand -hex 64` |
 | `AIRFLOW_POSTGRES_PASSWORD` | `postgres-password` | `openssl rand -base64 24` |
+| `AIRFLOW_METADATA_CONNECTION` | `connection` | URL SQLAlchemy (voir ci-dessous) |
 | `AIRFLOW_ADMIN_PASSWORD` | `admin-password` | mot de passe fort (UI Airflow, user `admin`) |
+
+**`AIRFLOW_METADATA_CONNECTION`** (obligatoire pour Airflow 3) — même mot de passe que `AIRFLOW_POSTGRES_PASSWORD`, encodé URL si caractères spéciaux :
+
+```text
+postgresql+psycopg2://airflow:<MOT_DE_PASSE>@airflow-postgresql.airflow.svc:5432/airflow?sslmode=disable
+```
+
+Dans Doppler, vous pouvez référencer le secret existant :  
+`postgresql+psycopg2://airflow:${AIRFLOW_POSTGRES_PASSWORD}@airflow-postgresql.airflow.svc:5432/airflow?sslmode=disable`
 
 > Si vous aviez `AIRFLOW_WEBSERVER_SECRET_KEY` (Airflow 2.x), renommez-la en `AIRFLOW_API_SECRET_KEY` et ajoutez `AIRFLOW_JWT_SECRET`.
 
