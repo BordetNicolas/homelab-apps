@@ -9,20 +9,21 @@ executor: KubernetesExecutor
 allowPodLaunching: true
 
 # Opérateurs custom : https://github.com/BordetNicolas/AirflowCustom (dossier operators/)
-# Monté sur /opt/airflow/custom_code/repo — attendu par les DAGs (ex. hello_operator_custom.py).
-extraEnv: |
-  - name: PYTHONPATH
-    value: "/opt/airflow/custom_code/repo"
+# Ne pas utiliser volumes/volumeMounts/extraEnv globaux — ils s’appliquent aux Jobs (spec immuable).
 
-volumes:
-  - name: custom-code
-    persistentVolumeClaim:
-      claimName: airflow-custom-code
+x-custom-code-volume: &customCodeVolume
+  name: custom-code
+  persistentVolumeClaim:
+    claimName: airflow-custom-code
 
-volumeMounts:
-  - name: custom-code
-    mountPath: /opt/airflow/custom_code
-    readOnly: true
+x-custom-code-mount: &customCodeMount
+  name: custom-code
+  mountPath: /opt/airflow/custom_code
+  readOnly: true
+
+x-custom-code-env: &customCodeEnv
+  name: PYTHONPATH
+  value: "/opt/airflow/custom_code/repo"
 
 x-git-sync-custom-code: &gitSyncCustomCode
   name: git-sync-custom-code
@@ -141,6 +142,13 @@ createUserJob:
 workers:
   celery:
     enableDefault: false
+  kubernetes:
+    extraVolumes:
+      - *customCodeVolume
+    extraVolumeMounts:
+      - *customCodeMount
+    env:
+      - *customCodeEnv
 
 scheduler:
   resources:
@@ -149,10 +157,22 @@ scheduler:
       memory: 512Mi
     limits:
       memory: 1Gi
+  extraVolumes:
+    - *customCodeVolume
+  extraVolumeMounts:
+    - *customCodeMount
+  env:
+    - *customCodeEnv
   extraContainers:
     - *gitSyncCustomCode
 
 dagProcessor:
+  extraVolumes:
+    - *customCodeVolume
+  extraVolumeMounts:
+    - *customCodeMount
+  env:
+    - *customCodeEnv
   extraContainers:
     - *gitSyncCustomCode
 
@@ -164,6 +184,12 @@ triggerer:
       memory: 256Mi
     limits:
       memory: 512Mi
+  extraVolumes:
+    - *customCodeVolume
+  extraVolumeMounts:
+    - *customCodeMount
+  env:
+    - *customCodeEnv
   extraContainers:
     - *gitSyncCustomCode
 

@@ -37,3 +37,5 @@ spec:
       - CreateNamespace=true
       # Évite que le Secret helm pre-install (broker-url) bloque la sync en PreSync
       - SkipHooks=true
+      # Jobs Helm : recréer au lieu de patcher un spec.template immuable
+      - Replace=true
