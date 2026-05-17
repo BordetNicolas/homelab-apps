@@ -84,6 +84,30 @@ postgresql:
 config:
   core:
     load_examples: "False"
+  api:
+    # URL publique (ingress) — utilisée par le chart pour execution_api_server_url / liens UI
+    base_url: https://airflow-test.alexetnico.com
+  logging:
+    base_log_folder: /opt/airflow/logs
+
+# Bug Airflow 3.x + KubernetesExecutor : hostname vide sur retries → http://:8793 (apache/airflow#65366).
+# Si le fichier existe sur le PVC logs, lecture locale au lieu du serveur worker.
+airflowLocalSettings: |
+  from pathlib import Path
+
+  from airflow.utils.log.file_task_handler import FileTaskHandler
+
+  _orig_read_from_logs_server = FileTaskHandler._read_from_logs_server
+
+  def _read_from_logs_server_local_fallback(self, ti, worker_log_rel_path):
+      hostname = getattr(ti, "hostname", None) or ""
+      if getattr(ti, "triggerer_job", None):
+          hostname = getattr(ti.triggerer_job, "hostname", None) or hostname
+      if not str(hostname).strip():
+          return self._read_from_local(Path(self.local_base, worker_log_rel_path))
+      return _orig_read_from_logs_server(self, ti, worker_log_rel_path)
+
+  FileTaskHandler._read_from_logs_server = _read_from_logs_server_local_fallback
 
 migrateDatabaseJob:
   enabled: true
@@ -214,6 +238,7 @@ logs:
     enabled: true
     size: 10Gi
     storageClassName: longhorn
+    # Le PVC logs du chart est en ReadWriteMany par défaut (lecture api-server + écriture workers).
 
 ingress:
   web:
