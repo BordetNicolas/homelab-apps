@@ -85,6 +85,16 @@ Source : [BordetNicolas/DAGs — dossier `dags/`](https://github.com/BordetNicol
 
 Après modification du repo GitHub, les DAGs apparaissent dans l’UI sous ~30 s (période de sync configurée).
 
+## Opérateurs custom (Git)
+
+Source : [BordetNicolas/AirflowCustom — dossier `operators/`](https://github.com/BordetNicolas/AirflowCustom/tree/main/operators) (repo public, branche `main`).
+
+- PVC partagé `airflow-custom-code` (déployé par `airflow-doppler`)
+- git-sync sur scheduler / dag-processor / triggerer → `/opt/airflow/custom_code/repo`
+- `PYTHONPATH` inclut ce chemin ; les pods **worker** Kubernetes montent le même PVC (lecture seule) pour exécuter les tâches
+
+Import dans un DAG : `from operators.hello_operator import HelloOperator` (voir `hello_operator_custom.py` dans le repo DAGs).
+
 ## Vérifications post-déploiement
 
 ```bash

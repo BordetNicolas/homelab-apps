@@ -8,6 +8,53 @@ executor: KubernetesExecutor
 
 allowPodLaunching: true
 
+# Opérateurs custom : https://github.com/BordetNicolas/AirflowCustom (dossier operators/)
+# Monté sur /opt/airflow/custom_code/repo — attendu par les DAGs (ex. hello_operator_custom.py).
+extraEnv: |
+  - name: PYTHONPATH
+    value: "/opt/airflow/custom_code/repo"
+
+volumes:
+  - name: custom-code
+    persistentVolumeClaim:
+      claimName: airflow-custom-code
+
+volumeMounts:
+  - name: custom-code
+    mountPath: /opt/airflow/custom_code
+    readOnly: true
+
+x-git-sync-custom-code: &gitSyncCustomCode
+  name: git-sync-custom-code
+  image: registry.k8s.io/git-sync/git-sync:v4.4.2
+  imagePullPolicy: IfNotPresent
+  securityContext:
+    runAsUser: 65533
+  env:
+    - name: GITSYNC_REPO
+      value: https://github.com/BordetNicolas/AirflowCustom.git
+    - name: GITSYNC_REF
+      value: main
+    - name: GIT_SYNC_BRANCH
+      value: main
+    - name: GITSYNC_DEPTH
+      value: "1"
+    - name: GITSYNC_ROOT
+      value: /git
+    - name: GITSYNC_LINK
+      value: repo
+    - name: GITSYNC_ADD_USER
+      value: "true"
+    - name: GITSYNC_PERIOD
+      value: 30s
+    - name: GITSYNC_MAX_FAILURES
+      value: "0"
+    - name: GITSYNC_HTTP_BIND
+      value: :8080
+  volumeMounts:
+    - name: custom-code
+      mountPath: /git
+
 fernetKeySecretName: airflow-credentials
 apiSecretKeySecretName: airflow-credentials
 jwtSecretName: airflow-credentials
@@ -102,6 +149,12 @@ scheduler:
       memory: 512Mi
     limits:
       memory: 1Gi
+  extraContainers:
+    - *gitSyncCustomCode
+
+dagProcessor:
+  extraContainers:
+    - *gitSyncCustomCode
 
 triggerer:
   enabled: true
@@ -111,6 +164,8 @@ triggerer:
       memory: 256Mi
     limits:
       memory: 512Mi
+  extraContainers:
+    - *gitSyncCustomCode
 
 dags:
   persistence:
