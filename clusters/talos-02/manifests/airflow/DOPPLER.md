@@ -60,7 +60,7 @@ kubectl -n airflow get secret airflow-credentials \
   -o jsonpath='{.data.admin-password}' | base64 -d; echo
 ```
 
-Les jobs Helm sont ordonnés pour ArgoCD : **PreSync** = migration DB, puis déploiement, **PostSync** = utilisateur `admin` (mot de passe Doppler). Le job est idempotent (`create` ou `reset-password`).
+Les jobs Helm sont ordonnés pour ArgoCD : **PreSync** = ServiceAccount puis migration DB, déploiement principal, **PostSync** = ServiceAccount puis utilisateur `admin`. Les ServiceAccounts des jobs doivent porter le **même hook** que le Job (sinon `serviceaccount … not found`). Le job admin est idempotent (`create` ou `reset-password`).
 
 **Important** : ne pas définir `webserver.defaultUser` dans `values.yaml` — le chart y lie `createUserJob.enabled` ; sans `enabled: true` explicite, le job admin ne part pas.
 
