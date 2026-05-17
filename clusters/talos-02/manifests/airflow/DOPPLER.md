@@ -60,9 +60,16 @@ kubectl -n airflow get secret airflow-credentials \
   -o jsonpath='{.data.admin-password}' | base64 -d; echo
 ```
 
-Les jobs Helm sont ordonnés pour ArgoCD : **PreSync** = ServiceAccount puis migration DB, déploiement principal, **PostSync** = ServiceAccount puis utilisateur `admin`. Les ServiceAccounts des jobs doivent porter le **même hook** que le Job (sinon `serviceaccount … not found`). Le job admin est idempotent (`create` ou `reset-password`).
+L’Application ArgoCD utilise `SkipHooks=true` (hooks Helm `pre-install` du chart, ex. `airflow-broker-url`) pour éviter les sync bloquées. Les jobs migration / create-user tournent au sync normal (`restartPolicy: OnFailure` si PostgreSQL n’est pas prêt).
 
 **Important** : ne pas définir `webserver.defaultUser` dans `values.yaml` — le chart y lie `createUserJob.enabled` ; sans `enabled: true` explicite, le job admin ne part pas.
+
+**Sync ArgoCD bloquée** : ne pas supprimer l’Application — terminer l’opération et retirer les finalizers des ressources hook en `Terminating` :
+
+```bash
+kubectl -n argocd get application airflow -o json | jq 'del(.status.operationState)|del(.operation)' | kubectl replace -f -
+kubectl -n airflow patch secret airflow-broker-url --type=json -p='[{"op":"remove","path":"/metadata/finalizers"}]'
+```
 
 ## Vérifications post-déploiement
 

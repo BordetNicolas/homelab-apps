@@ -35,5 +35,5 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      # Jobs de migration / create-user : laisser le temps de terminer au premier sync
-      - ServerSideApply=true
+      # Évite que le Secret helm pre-install (broker-url) bloque la sync en PreSync
+      - SkipHooks=true

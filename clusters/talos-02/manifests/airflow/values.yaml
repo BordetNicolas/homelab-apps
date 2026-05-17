@@ -41,16 +41,8 @@ migrateDatabaseJob:
   enabled: true
   useHelmHooks: false
   ttlSecondsAfterFinished: 300
-  serviceAccount:
-    annotations:
-      # Même phase PreSync que le Job — sinon le SA n’existe pas encore (sync principal après les hooks).
-      argocd.argoproj.io/hook: PreSync
-      argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-      argocd.argoproj.io/sync-wave: "-1"
   jobAnnotations:
-    argocd.argoproj.io/hook: PreSync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "10"
 
 # Ne pas définir webserver.defaultUser : le chart y lie createUserJob.enabled (déprécié).
 # L’admin est créé par createUserJob ci-dessous (mot de passe Doppler).
@@ -68,15 +60,8 @@ createUserJob:
   enabled: true
   useHelmHooks: false
   ttlSecondsAfterFinished: 300
-  serviceAccount:
-    annotations:
-      argocd.argoproj.io/hook: PostSync
-      argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-      argocd.argoproj.io/sync-wave: "-1"
   jobAnnotations:
-    argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "20"
   extraVolumes:
     - name: airflow-credentials
       secret:
