@@ -165,8 +165,13 @@ createUserJob:
 
 workers:
   celery:
+    # Pas de workers Celery (executor = KubernetesExecutor uniquement).
     enableDefault: false
   kubernetes:
+    # Obligatoire si enableDefault: false — sinon le SA « airflow-worker » n’existe pas
+    # et les pods de tâches échouent en 403 (serviceaccount "airflow-worker" not found).
+    serviceAccount:
+      create: true
     extraVolumes:
       - *customCodeVolume
     extraVolumeMounts:

@@ -113,6 +113,7 @@ curl -sI https://airflow-test.alexetnico.com | head -1
 | UI : identifiants invalides | `createUserJob` pas passé ou Doppler vide | Vérifier job `airflow-create-user` ; recréer user (voir ci-dessous) |
 | Triggerer / dag-processor bloqués | PVC `airflow-dags` en RWO | Supprimer le PVC et resync (values : `ReadWriteMany`) |
 | UI : `Could not read served logs` / `http://:8793` / `No host supplied` | Bug Airflow 3.x + `KubernetesExecutor` (hostname vide sur retries, [issue #65366](https://github.com/apache/airflow/issues/65366)) | `airflowLocalSettings` dans values (fallback lecture PVC) ; logs des pods worker : `kubectl -n airflow logs <pod-worker>` |
+| Tâche failed, `serviceaccount "airflow-worker" not found` (403) | `workers.celery.enableDefault: false` sans `workers.kubernetes.serviceAccount.create: true` | Activer le SA Kubernetes dans values ; resync ArgoCD |
 
 Recréer l’admin manuellement :
 
