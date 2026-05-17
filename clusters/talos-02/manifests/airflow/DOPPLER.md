@@ -60,7 +60,15 @@ kubectl -n airflow get secret airflow-credentials \
   -o jsonpath='{.data.admin-password}' | base64 -d; echo
 ```
 
-L’Application ArgoCD utilise `SkipHooks=true` (hooks Helm `pre-install` du chart, ex. `airflow-broker-url`) pour éviter les sync bloquées. Les jobs migration / create-user tournent au sync normal (`restartPolicy: OnFailure` si PostgreSQL n’est pas prêt).
+L’Application ArgoCD utilise `SkipHooks=true` (hooks Helm `pre-install` du chart, ex. `airflow-broker-url`) pour éviter les sync bloquées.
+
+Les jobs Helm utilisent des **sync-waves ArgoCD** (pas des hooks PreSync) :
+- wave **-7** : ServiceAccount migration
+- wave **-5** : `airflow-run-airflow-migrations`
+- wave **0** : PostgreSQL, Deployments, etc.
+- wave **5** : `airflow-create-user`
+
+Ne pas mettre les jobs en wave 10+ : ArgoCD attend que le wave 0 soit Healthy, mais les pods restent bloqués sur `wait-for-airflow-migrations` tant que la DB n’est pas migrée.
 
 **Important** : ne pas définir `webserver.defaultUser` dans `values.yaml` — le chart y lie `createUserJob.enabled` ; sans `enabled: true` explicite, le job admin ne part pas.
 
