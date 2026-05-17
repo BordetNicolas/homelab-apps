@@ -79,6 +79,12 @@ kubectl -n argocd get application airflow -o json | jq 'del(.status.operationSta
 kubectl -n airflow patch secret airflow-broker-url --type=json -p='[{"op":"remove","path":"/metadata/finalizers"}]'
 ```
 
+## DAGs (Git)
+
+Source : [BordetNicolas/DAGs — dossier `dags/`](https://github.com/BordetNicolas/DAGs/tree/main/dags) (repo public, branche `main`), synchronisé via **git-sync** sur le volume `airflow-dags` (PVC Longhorn RWX).
+
+Après modification du repo GitHub, les DAGs apparaissent dans l’UI sous ~30 s (période de sync configurée).
+
 ## Vérifications post-déploiement
 
 ```bash

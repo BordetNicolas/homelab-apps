@@ -120,7 +120,13 @@ dags:
     # RWO bloque le triggerer si scheduler/dag-processor sont sur un autre nœud
     accessMode: ReadWriteMany
   gitSync:
-    enabled: false
+    enabled: true
+    repo: https://github.com/BordetNicolas/DAGs.git
+    branch: main
+    ref: main
+    subPath: dags
+    depth: 1
+    period: 30s
 
 logs:
   persistence:
